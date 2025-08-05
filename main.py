@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 import logging
 
 from GoogleSheets import read_sheet_as_df, update_sheet_row
+from llm_router import generate_content
 from summarizer import summarize_link
 from memory import parse_related_posts, get_high_performing_snippets
-from generator import generate_post
 from logger import log_ai_thinking
 
 def main():
@@ -37,7 +37,7 @@ def main():
                 memory_snippets = get_high_performing_snippets(memory_items)
 
                 # Step 3: Generate Post
-                generated_post, prompt = generate_post(topic, summary, memory_snippets)
+                generated_post, prompt = generate_content(topic, summary, memory_snippets)
                 logging.info(f"✅ Post generated for topic: {topic}")
 
                 # Step 4: Save thinking

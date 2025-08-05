@@ -2,7 +2,8 @@
 
 from newspaper import Article
 import logging
-
+import nltk
+nltk.download('punkt')
 logging.basicConfig(level=logging.INFO)
 
 def summarize_link(link: str) -> str:

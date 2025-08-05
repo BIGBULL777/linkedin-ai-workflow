@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def generate_post(topic: str, summary: str, memory_snippets: list[str]) -> str:
-    # Build memory block
+def generate_post(topic: str, summary: str, memory_snippets: list[str]) -> tuple[str, str]:
     memory_block = "\n\n".join(memory_snippets) if memory_snippets else "None available"
 
     prompt = f"""
@@ -31,14 +30,15 @@ Constraints:
 Write the post now:
 """
 
+    print(prompt)
     response = openai.ChatCompletion.create(
-        model="gpt-4",  # or "gpt-3.5-turbo" if you're using that
-        messages=[
+        model="gpt-3.5-turbo-0125",
+    messages=[
             {"role": "system", "content": "You are a helpful and concise technical LinkedIn content writer."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7,
         max_tokens=400
     )
-
-    return response['choices'][0]['message']['content'].strip()
+    print("response:" + response)
+    return response['choices'][0]['message']['content'].strip(), prompt

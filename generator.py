@@ -1,0 +1,44 @@
+# generator.py
+
+import os
+import openai
+from dotenv import load_dotenv
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def generate_post(topic: str, summary: str, memory_snippets: list[str]) -> str:
+    # Build memory block
+    memory_block = "\n\n".join(memory_snippets) if memory_snippets else "None available"
+
+    prompt = f"""
+You are a technical content writer who creates engaging LinkedIn posts.
+
+Goal: Write a short, impactful post about a software/technology topic to increase impressions and engagement.
+
+Requirements:
+- Topic: {topic}
+- Based on this summary: {summary}
+- Style similar to these high-impression posts: {memory_block}
+
+Constraints:
+- Max 250 words
+- Use an engaging hook at the top
+- Share a unique insight or technical takeaway
+- End with a question or CTA to drive engagement
+- Avoid hashtags or emojis
+
+Write the post now:
+"""
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",  # or "gpt-3.5-turbo" if you're using that
+        messages=[
+            {"role": "system", "content": "You are a helpful and concise technical LinkedIn content writer."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.7,
+        max_tokens=400
+    )
+
+    return response['choices'][0]['message']['content'].strip()

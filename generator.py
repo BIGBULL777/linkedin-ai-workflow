@@ -78,7 +78,7 @@ Write the post now:
 
     # Configure and call Gemini
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     response = model.generate_content(prompt)
 
     return response.text.strip(), prompt

@@ -1,17 +1,20 @@
 # main.py
 
 import os
-from dotenv import load_dotenv
 import logging
+from dotenv import load_dotenv
 
 from GoogleSheets import read_sheet_as_df, update_sheet_row
-from llm_router import generate_content
 from summarizer import summarize_link
 from memory import parse_related_posts, get_high_performing_snippets
+from llm_router import generate_content
 from logger import log_ai_thinking
+
+MAX_TRIES = 25  # Avoid infinite loops
 
 def main():
     load_dotenv()
+
     sheet_name = os.getenv("GOOGLE_SHEET_NAME")
     if not sheet_name:
         raise ValueError("Missing GOOGLE_SHEET_NAME in .env")
@@ -36,16 +39,30 @@ def main():
                 memory_items = parse_related_posts(related_posts, mapped_impressions)
                 memory_snippets = get_high_performing_snippets(memory_items)
 
-                # Step 3: Generate Post
-                generated_post, prompt = generate_content(topic, summary, memory_snippets)
-                logging.info(f"✅ Post generated for topic: {topic}")
+                # Step 3: Loop until post passes critique
+                final_post, final_prompt, score, feedback = "", "", 0, ""
+                attempts = 0
 
-                # Step 4: Save thinking
-                log_ai_thinking(index, topic, summary, memory_snippets, prompt, generated_post)
+                while score < 8 and attempts < MAX_TRIES:
+                    attempts += 1
+                    logging.info(f"🧠 Generating post attempt #{attempts}...")
 
-                # Step 5: Update sheet
-                update_sheet_row(sheet, index, generated_post)
-                logging.info("📝 Sheet updated for row %s", index)
+                    # Generate post using LLM fallback
+                    generated_post, prompt, score, feedback = generate_content(topic, summary, memory_snippets)
+                    log_ai_thinking(index, topic, summary, memory_snippets, prompt, generated_post, score, feedback)
+
+                    # Save if score passed
+                    if score >= 8:
+                        final_post = generated_post
+                        final_prompt = prompt
+                        logging.info(f"✅ Post accepted with score {score} on attempt #{attempts}")
+                        break
+
+                if final_post:
+                    update_sheet_row(sheet, index, final_post)
+                    logging.info("📝 Sheet updated for row %s", index)
+                else:
+                    logging.warning(f"⚠️ Failed to generate acceptable post for row {index} after {MAX_TRIES} tries.")
 
             except Exception as e:
                 logging.error(f"❌ Error processing row {index}: {e}")
